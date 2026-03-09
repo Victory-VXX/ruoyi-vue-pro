@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Spring Boot 3.5.9 multi-module Maven project (芋道/Ruoyi-Vue-Pro backend) using Java 17. It's an enterprise application framework with modular architecture, supporting features like user management, permissions, workflow, payment, mall, CRM, ERP, and AI integration.
+This is a Spring Boot 3.5.9 multi-module Maven project (芋道/Ruoyi-Vue-Pro backend) using Java 17. Version: `2026.01-SNAPSHOT`. It's an enterprise application framework with modular architecture, supporting features like user management, permissions, workflow, payment, mall, CRM, ERP, and AI integration.
+
+**Official Documentation:** https://doc.iocoder.cn/quick-start/
 
 ## Build & Run Commands
 
@@ -117,10 +119,14 @@ Server runs on port **48080** by default.
 ### Database Configuration
 
 Database connections are configured in `application-local.yaml`:
-- Primary datasource: MySQL at `192.168.35.131:3306/ruoyi-vue-pro`
+- Primary datasource: MySQL (default: `192.168.35.131:3306/ruoyi-vue-pro`)
 - Redis: `192.168.35.131:6379`
 
 To use a different database, modify the `spring.datasource.dynamic.datasource.master` configuration.
+
+**First-time setup:** Run SQL initialization scripts from `sql/mysql/` directory:
+- `ruoyi-vue-pro.sql` - Main database schema and data
+- `quartz.sql` - Quartz scheduler tables (if using scheduled jobs)
 
 ### Code Generation
 
@@ -152,8 +158,16 @@ Access Swagger UI at: `http://localhost:48080/swagger-ui`
 ### Testing Strategy
 
 - Unit tests use `yudao-spring-boot-starter-test` (includes test utilities and mock configurations)
+- Test resources are configured in `src/test/resources/application-unit-test.yaml` for each module
 - Mapper SQL logging is enabled in debug mode for development
 - Test generation can be enabled via `yudao.codegen.unit-test-enable: true`
+
+### Lombok Configuration
+
+The project uses a `lombok.config` file in the root directory with specific settings:
+- `lombok.toString.callsuper=CALL` - Always call super in toString()
+- `lombok.equalsandhashcode.callsuper=CALL` - Always call super in equals/hashCode
+- `lombok.accessors.chain=true` - Enable fluent chainable setters
 
 ## Module Dependencies
 
@@ -162,6 +176,12 @@ When adding new features:
 2. For cross-module communication, use the `api/` package pattern
 3. Enable modules in `yudao-server/pom.xml` by uncommenting dependencies
 4. Most business modules are disabled by default for faster compilation
+
+**Enabling Optional Modules:**
+Many optional modules (bpm, pay, mall, crm, erp, ai, iot, etc.) are commented out in the root `pom.xml`. To enable:
+1. Uncomment the module in root `pom.xml` `<modules>` section
+2. Uncomment the corresponding dependency in `yudao-server/pom.xml`
+3. Run `mvn clean compile` to verify the setup
 
 ## Common Patterns
 
@@ -190,13 +210,17 @@ When adding new features:
 ### Compilation Issues
 - Ensure Java 17 is being used
 - Run `mvn clean` before `mvn compile`
-- Check that all modules are properly flattened (`mvn flatten:flatten` if needed)
+- If you encounter version resolution issues, run `mvn flatten:flatten` to update `.flattened-pom.xml`
+- The project uses the Maven Flatten Plugin to manage the `${revision}` property version
+- MapStruct + Lombok issues: Ensure annotation processor order in maven-compiler-plugin configuration
 
 ### Startup Issues
 - Verify database connection in `application-local.yaml`
 - Verify Redis is running and accessible
-- Check the main application class: `YudaoServerApplication` in `yudao-server`
+- Check the main application class: `YudaoServerApplication` in `yudao-server/src/main/java/cn/iocoder/yudao/server/`
+- The application scans `${yudao.info.base-package}.server` and `${yudao.info.base-package}.module` packages
 - Review logs at: `${user.home}/logs/yudao-server.log`
+- Common startup issues are documented at: https://doc.iocoder.cn/quick-start/
 
 ### Adding New Modules
 1. Create module directory following `yudao-module-{name}` pattern
